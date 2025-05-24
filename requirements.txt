@@ -1,6 +1,6 @@
 streamlit
 google-generativeai
-openai-whisper
+git+https://github.com/openai/whisper.git
 langchain
 langchain-community
 langchain-core
