@@ -857,7 +857,7 @@ def main():
             st.info("Using your 'qna' index with 768 dimensions")
 
             # Option to reconnect if needed
-            if st.button("🔄 Reconnect", help="Reconnect to Pinecone if experiencing issues"):
+            if st.button("🔄 Reconnect", help="Reconnect to Pinecone if experiencing issues", key="reconnect_button"):
                 st.session_state.pinecone_initialized = False
                 st.rerun()
         else:
@@ -884,7 +884,7 @@ def main():
 
             # Auto-initialize if API key is available
             if pinecone_api_key:
-                if st.button("🔗 Connect to Pinecone"):
+                if st.button("🔗 Connect to Pinecone", key="connect_button"):
                     with st.spinner("Connecting to Pinecone..."):
                         try:
                             # Create a new PineconeDirectAPI instance
@@ -1138,7 +1138,7 @@ def main():
                         audio_result = None
                 except Exception as e:
                     st.warning("⚠️ Microphone component not fully loaded. Please refresh the page if recording doesn't work.")
-                    st.button("🎤", disabled=True, help="Microphone component loading...")
+                    st.button("🎤 Record", disabled=True, help="Microphone component loading...", key="mic_loading")
                     audio_result = None
 
             except ImportError:
@@ -1158,19 +1158,19 @@ def main():
                     else:
                         audio_result = None
                 except ImportError:
-                    st.button("🎤", disabled=True, help="Microphone recording not available in this environment")
+                    st.button("🎤 Record", disabled=True, help="Microphone recording not available in this environment", key="mic_disabled")
                     st.info("💡 You can still use text input to ask questions!")
                     audio_result = None
             except Exception as e:
                 st.warning(f"Audio recording temporarily unavailable: {str(e)}")
-                st.button("🎤", disabled=True, help="Audio recording temporarily unavailable")
+                st.button("🎤 Record", disabled=True, help="Audio recording temporarily unavailable", key="mic_error")
                 audio_result = None
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col3:
             # Send button with custom styling
             st.markdown('<div class="send-btn">', unsafe_allow_html=True)
-            send_pressed = st.button("📤", help="Send message")
+            send_pressed = st.button("📤 Send", help="Send message", key="send_button")
             st.markdown('</div>', unsafe_allow_html=True)
 
         # Process text input
@@ -1186,7 +1186,7 @@ def main():
             col1, col2, col3 = st.columns([0.4, 0.2, 0.4])
             with col2:
                 st.markdown('<div class="clear-btn">', unsafe_allow_html=True)
-                if st.button("🗑️", help="Clear conversation history"):
+                if st.button("🗑️ Clear", help="Clear conversation history", key="clear_button"):
                     st.session_state.conversation = []
                     if 'audio_paths' in st.session_state:
                         st.session_state.audio_paths = {}
