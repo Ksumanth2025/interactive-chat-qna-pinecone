@@ -10,9 +10,14 @@ try:
     from langchain_community.document_loaders import PyPDFLoader
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     from langchain_huggingface import HuggingFaceEmbeddings
+    LANGCHAIN_AVAILABLE = True
 except ImportError as e:
-    st.error(f"LangChain import error: {e}")
-    st.info("Some features may not be available. Please check the deployment logs.")
+    print(f"LangChain not available: {e}")
+    LANGCHAIN_AVAILABLE = False
+    # Define dummy classes to avoid NameError
+    PyPDFLoader = None
+    RecursiveCharacterTextSplitter = None
+    HuggingFaceEmbeddings = None
 
 # Import required libraries for audio processing
 try:
@@ -283,8 +288,9 @@ class PineconeDirectAPI:
 def load_and_split_pdf(pdf_path, chunk_size=1000, chunk_overlap=200):
     """Load and split a PDF into chunks for processing"""
     try:
-        # Try LangChain first
-        if 'PyPDFLoader' in globals() and 'RecursiveCharacterTextSplitter' in globals():
+        # Try LangChain first if available
+        if LANGCHAIN_AVAILABLE and PyPDFLoader and RecursiveCharacterTextSplitter:
+            print("Using LangChain for PDF processing...")
             loader = PyPDFLoader(pdf_path)
             documents = loader.load()
             text_splitter = RecursiveCharacterTextSplitter(
@@ -295,11 +301,13 @@ def load_and_split_pdf(pdf_path, chunk_size=1000, chunk_overlap=200):
             chunks = text_splitter.split_documents(documents)
             return chunks
         else:
-            # Fallback to PyPDF2
+            # Use fallback method
+            print("Using PyPDF2 fallback for PDF processing...")
             return load_and_split_pdf_fallback(pdf_path, chunk_size, chunk_overlap)
     except Exception as e:
         print(f"Error loading PDF with LangChain: {e}")
         # Try fallback method
+        print("Falling back to PyPDF2...")
         return load_and_split_pdf_fallback(pdf_path, chunk_size, chunk_overlap)
 
 def load_and_split_pdf_fallback(pdf_path, chunk_size=1000, chunk_overlap=200):
@@ -389,10 +397,12 @@ def setup_vector_store(pdf_chunks, pinecone_api):
         # Initialize the embedding model
         print("Initializing embedding model...")
         try:
-            if 'HuggingFaceEmbeddings' in globals():
+            if LANGCHAIN_AVAILABLE and HuggingFaceEmbeddings:
+                print("Using LangChain HuggingFace embeddings...")
                 embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-mpnet-base-v2')
             else:
                 # Fallback to sentence-transformers directly
+                print("Using sentence-transformers directly...")
                 from sentence_transformers import SentenceTransformer
                 embedding_model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
         except Exception as e:

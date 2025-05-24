@@ -1,17 +1,9 @@
 streamlit
 google-generativeai
-openai-whisper
-langchain
-langchain-community
-langchain-huggingface
 sentence-transformers
-transformers
 pinecone-client
 gTTS
-streamlit_mic_recorder
 PyPDF2
 requests
 numpy
-pandas
 pydantic
-PyYAML
