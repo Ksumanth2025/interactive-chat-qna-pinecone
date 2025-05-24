@@ -1,8 +1,2 @@
 ffmpeg
 libsndfile1
-espeak
-espeak-data
-libespeak1
-libespeak-dev
-festival
-festvox-kallpc16k

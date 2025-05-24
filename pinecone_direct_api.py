@@ -5,12 +5,21 @@ import os
 import time
 import requests
 import json
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+# Import with fallbacks for Streamlit Cloud compatibility
+try:
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError as e:
+    st.error(f"LangChain import error: {e}")
+    st.info("Some features may not be available. Please check the deployment logs.")
 
 # Import required libraries for audio processing
-import whisper
+try:
+    import whisper
+except ImportError:
+    st.warning("Whisper not available - audio transcription disabled")
+    whisper = None
 
 # Import 11 Labs text-to-speech functionality
 try:
