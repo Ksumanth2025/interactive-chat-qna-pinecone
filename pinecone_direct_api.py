@@ -999,25 +999,51 @@ def main():
                 if 'last_processed_recording' not in st.session_state:
                     st.session_state.last_processed_recording = None
 
-                # Use mic_recorder with unique key
-                audio_result = mic_recorder(
-                    key=f"recorder_{st.session_state.audio_recorder_key}",
-                    start_prompt="🎤",
-                    stop_prompt="⏹️",
-                    use_container_width=True
-                )
+                # Use mic_recorder with unique key and error handling
+                try:
+                    audio_result = mic_recorder(
+                        key=f"recorder_{st.session_state.audio_recorder_key}",
+                        start_prompt="🎤",
+                        stop_prompt="⏹️",
+                        use_container_width=True
+                    )
 
-                # Check if this is a new recording that hasn't been processed yet
-                if (audio_result and isinstance(audio_result, dict) and 'bytes' in audio_result and
-                    audio_result.get('bytes') != st.session_state.last_processed_recording):
-                    # Store this recording to avoid processing it multiple times
-                    st.session_state.last_processed_recording = audio_result.get('bytes')
-                else:
-                    # If we've already processed this recording, set to None to avoid reprocessing
+                    # Check if this is a new recording that hasn't been processed yet
+                    if (audio_result and isinstance(audio_result, dict) and 'bytes' in audio_result and
+                        audio_result.get('bytes') != st.session_state.last_processed_recording):
+                        # Store this recording to avoid processing it multiple times
+                        st.session_state.last_processed_recording = audio_result.get('bytes')
+                    else:
+                        # If we've already processed this recording, set to None to avoid reprocessing
+                        audio_result = None
+                except Exception as e:
+                    st.warning("⚠️ Microphone component not fully loaded. Please refresh the page if recording doesn't work.")
+                    st.button("🎤", disabled=True, help="Microphone component loading...")
                     audio_result = None
 
             except ImportError:
-                st.button("🎤", disabled=True, help="Install streamlit-mic-recorder to enable recording")
+                # Try alternative audio recorder
+                try:
+                    from streamlit_audio_recorder import audio_recorder
+                    st.info("🎤 Using alternative audio recorder")
+                    audio_bytes = audio_recorder(
+                        text="Click to record",
+                        recording_color="#e8b62c",
+                        neutral_color="#6aa36f",
+                        icon_name="microphone-lines",
+                        icon_size="2x",
+                    )
+                    if audio_bytes:
+                        audio_result = {"bytes": audio_bytes}
+                    else:
+                        audio_result = None
+                except ImportError:
+                    st.button("🎤", disabled=True, help="Microphone recording not available in this environment")
+                    st.info("💡 You can still use text input to ask questions!")
+                    audio_result = None
+            except Exception as e:
+                st.warning(f"Audio recording temporarily unavailable: {str(e)}")
+                st.button("🎤", disabled=True, help="Audio recording temporarily unavailable")
                 audio_result = None
             st.markdown('</div>', unsafe_allow_html=True)
 
