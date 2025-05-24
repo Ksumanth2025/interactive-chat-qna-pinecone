@@ -22,9 +22,11 @@ except ImportError as e:
 # Import required libraries for audio processing
 try:
     import whisper
+    WHISPER_AVAILABLE = True
 except ImportError:
-    st.warning("Whisper not available - audio transcription disabled")
+    print("Whisper not available - audio transcription disabled")
     whisper = None
+    WHISPER_AVAILABLE = False
 
 # Import 11 Labs text-to-speech functionality
 try:
@@ -587,6 +589,10 @@ def transcribe_with_whisper(audio_path, model_size="base"):
     Returns:
         Transcribed text
     """
+    if not WHISPER_AVAILABLE or whisper is None:
+        print("Whisper not available for transcription")
+        return "Audio transcription not available"
+
     try:
         # Force CPU to avoid CUDA errors
         device = "cpu"
@@ -817,6 +823,12 @@ def main():
 
     # Apply custom CSS
     apply_custom_css()
+
+    # Show import status
+    if not WHISPER_AVAILABLE:
+        st.info("ℹ️ Audio transcription disabled (Whisper not available)")
+    if not LANGCHAIN_AVAILABLE:
+        st.info("ℹ️ Using fallback PDF processing (LangChain not available)")
 
     # Initialize session state
     if 'conversation' not in st.session_state:
