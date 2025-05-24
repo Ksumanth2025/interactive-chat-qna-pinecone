@@ -702,6 +702,9 @@ def apply_custom_css():
         font-size: 16px !important;
         padding: 0 !important;
     }
+    .clear-btn button[data-testid="stBaseButton-minimal"] {
+        aria-label: "Clear conversation history" !important;
+    }
 
     /* Send button */
     .send-btn {
@@ -720,6 +723,9 @@ def apply_custom_css():
         font-size: 16px !important;
         padding: 0 !important;
     }
+    .send-btn button[data-testid="stBaseButton-minimal"] {
+        aria-label: "Send message" !important;
+    }
 
     /* Record button */
     .record-btn {
@@ -737,6 +743,9 @@ def apply_custom_css():
         justify-content: center !important;
         font-size: 16px !important;
         padding: 0 !important;
+    }
+    .record-btn button[data-testid="stBaseButton-minimal"] {
+        aria-label: "Record audio message" !important;
     }
 
     /* Button hover effects */
@@ -805,11 +814,46 @@ def apply_custom_css():
         });
     }
 
-    // Run the function when the page loads
-    document.addEventListener('DOMContentLoaded', autoPlayAudio);
+    // Function to fix accessibility issues with Streamlit buttons
+    function fixAccessibility() {
+        // Fix buttons without proper aria-labels
+        const buttons = document.querySelectorAll('button[aria-label=""]');
+        buttons.forEach(button => {
+            // Check if it's a header button (hamburger menu, etc.)
+            if (button.getAttribute('kind') === 'headerNoPadding') {
+                // Try to determine the button purpose from its content or position
+                const buttonText = button.textContent.trim();
+                const hasIcon = button.querySelector('svg') || button.querySelector('[data-testid*="icon"]');
 
-    // Also run it periodically to catch new audio elements
-    setInterval(autoPlayAudio, 1000);
+                if (hasIcon && !buttonText) {
+                    // This is likely a menu or settings button
+                    button.setAttribute('aria-label', 'Menu options');
+                    button.setAttribute('title', 'Menu options');
+                }
+            }
+
+            // Fix minimal buttons without labels
+            if (button.getAttribute('kind') === 'minimal' && !button.getAttribute('aria-label')) {
+                const buttonText = button.textContent.trim();
+                if (buttonText) {
+                    button.setAttribute('aria-label', buttonText);
+                    button.setAttribute('title', buttonText);
+                }
+            }
+        });
+    }
+
+    // Run the functions when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        autoPlayAudio();
+        fixAccessibility();
+    });
+
+    // Also run periodically to catch new elements
+    setInterval(function() {
+        autoPlayAudio();
+        fixAccessibility();
+    }, 1000);
     </script>
     """, unsafe_allow_html=True)
 
