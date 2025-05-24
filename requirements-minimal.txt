@@ -1,0 +1,42 @@
+# Minimal requirements for the Interactive Chat QnA application
+# Based on Python 3.10.16 working environment
+# Essential packages only for core functionality
+
+# Core Streamlit
+streamlit==1.45.1
+
+# AI & ML
+google-generativeai==0.8.5
+openai-whisper==20240930
+
+# LangChain (core packages only)
+langchain==0.3.25
+langchain-community==0.3.24
+langchain-huggingface==0.2.0
+
+# Embeddings
+sentence-transformers==4.1.0
+
+# Vector Database
+pinecone==6.0.2
+
+# Audio Processing
+librosa==0.11.0
+soundfile==0.13.1
+gTTS==2.5.4
+
+# PDF Processing
+PyPDF2==3.0.1
+
+# HTTP Requests
+requests==2.32.3
+
+# Streamlit Audio Recorder
+streamlit_mic_recorder==0.0.8
+
+# Core Dependencies
+numpy==2.2.6
+torch==2.7.0
+
+# Windows Support (if needed)
+pywin32==310; platform_system == "Windows"

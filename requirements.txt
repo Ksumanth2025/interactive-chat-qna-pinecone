@@ -1,0 +1,77 @@
+# Requirements for Interactive Chat QnA with Direct Pinecone API
+# Based on Python 3.10.16 environment
+# Generated from working installation
+
+# === CORE STREAMLIT APPLICATION ===
+streamlit==1.45.1
+
+# === AI & ML LIBRARIES ===
+# Google Gemini AI
+google-generativeai==0.8.5
+
+# OpenAI Whisper for speech-to-text
+openai-whisper==20240930
+
+# LangChain for document processing and embeddings
+langchain==0.3.25
+langchain-community==0.3.24
+langchain-core==0.3.60
+langchain-huggingface==0.2.0
+langchain-pinecone==0.2.6
+langchain-text-splitters==0.3.8
+
+# HuggingFace for embeddings and transformers
+sentence-transformers==4.1.0
+transformers==4.51.3
+huggingface-hub==0.31.4
+
+# === VECTOR DATABASE ===
+# Pinecone for vector storage (updated package name)
+pinecone==6.0.2
+pinecone-client==6.0.0
+
+# ChromaDB (alternative vector store)
+chromadb==1.0.9
+
+# === AUDIO PROCESSING ===
+# Audio file processing
+librosa==0.11.0
+soundfile==0.13.1
+
+# Text-to-speech
+gTTS==2.5.4
+pyttsx3==2.98
+
+# Streamlit microphone recorder
+streamlit_mic_recorder==0.0.8
+
+# === PDF PROCESSING ===
+# PDF document loading
+PyPDF2==3.0.1
+pypdf==5.5.0
+
+# === HTTP REQUESTS ===
+# For API calls (Pinecone, 11Labs, etc.)
+requests==2.32.3
+
+# === AUDIO/VIDEO PROCESSING ===
+# Vosk for speech recognition (fallback)
+vosk==0.3.45
+
+# === CORE DEPENDENCIES ===
+numpy==2.2.6
+pandas==2.2.3
+torch==2.7.0
+torchaudio==2.7.0
+
+# === SYSTEM DEPENDENCIES ===
+# For Windows text-to-speech support
+pywin32==310; platform_system == "Windows"
+pypiwin32==223; platform_system == "Windows"
+
+# === UTILITY LIBRARIES ===
+# Additional utilities used by the application
+pydantic==2.11.4
+PyYAML==6.0.2
+packaging==24.2
+typing_extensions==4.13.2
