@@ -283,17 +283,72 @@ class PineconeDirectAPI:
 def load_and_split_pdf(pdf_path, chunk_size=1000, chunk_overlap=200):
     """Load and split a PDF into chunks for processing"""
     try:
-        loader = PyPDFLoader(pdf_path)
-        documents = loader.load()
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            length_function=len
-        )
-        chunks = text_splitter.split_documents(documents)
-        return chunks
+        # Try LangChain first
+        if 'PyPDFLoader' in globals() and 'RecursiveCharacterTextSplitter' in globals():
+            loader = PyPDFLoader(pdf_path)
+            documents = loader.load()
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                length_function=len
+            )
+            chunks = text_splitter.split_documents(documents)
+            return chunks
+        else:
+            # Fallback to PyPDF2
+            return load_and_split_pdf_fallback(pdf_path, chunk_size, chunk_overlap)
     except Exception as e:
-        print(f"Error loading PDF: {e}")
+        print(f"Error loading PDF with LangChain: {e}")
+        # Try fallback method
+        return load_and_split_pdf_fallback(pdf_path, chunk_size, chunk_overlap)
+
+def load_and_split_pdf_fallback(pdf_path, chunk_size=1000, chunk_overlap=200):
+    """Fallback PDF processing using PyPDF2"""
+    try:
+        import PyPDF2
+
+        # Read PDF
+        with open(pdf_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n"
+
+        # Simple text splitting
+        chunks = []
+        start = 0
+        chunk_id = 0
+
+        while start < len(text):
+            end = start + chunk_size
+            if end > len(text):
+                end = len(text)
+
+            chunk_text = text[start:end]
+
+            # Create document-like object
+            doc = type('Document', (), {})()
+            doc.page_content = chunk_text
+            doc.metadata = {
+                'source': pdf_path,
+                'chunk_id': chunk_id,
+                'start_index': start,
+                'end_index': end
+            }
+            chunks.append(doc)
+
+            start = end - chunk_overlap
+            chunk_id += 1
+
+            if start >= len(text):
+                break
+
+        print(f"Fallback PDF processing: Created {len(chunks)} chunks")
+        return chunks
+
+    except Exception as e:
+        print(f"Error in fallback PDF processing: {e}")
+        st.error(f"PDF processing failed: {e}")
         return []
 
 # === CUSTOM VECTOR STORE SETUP ===
@@ -333,7 +388,17 @@ def setup_vector_store(pdf_chunks, pinecone_api):
 
         # Initialize the embedding model
         print("Initializing embedding model...")
-        embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-mpnet-base-v2')
+        try:
+            if 'HuggingFaceEmbeddings' in globals():
+                embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-mpnet-base-v2')
+            else:
+                # Fallback to sentence-transformers directly
+                from sentence_transformers import SentenceTransformer
+                embedding_model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+        except Exception as e:
+            print(f"Error initializing embedding model: {e}")
+            st.error(f"Could not initialize embedding model: {e}")
+            return None
 
         # Get embeddings for all chunks
         print("Generating embeddings for document chunks...")
@@ -354,9 +419,19 @@ def setup_vector_store(pdf_chunks, pinecone_api):
 
         for i in range(0, len(texts), batch_size):
             batch_texts = texts[i:i+batch_size]
-            batch_embeddings = embedding_model.embed_documents(batch_texts)
-            all_embeddings.extend(batch_embeddings)
-            print(f"Processed batch {i//batch_size + 1}/{(len(texts)-1)//batch_size + 1}")
+            try:
+                # Try LangChain method first
+                if hasattr(embedding_model, 'embed_documents'):
+                    batch_embeddings = embedding_model.embed_documents(batch_texts)
+                else:
+                    # Use sentence-transformers directly
+                    batch_embeddings = embedding_model.encode(batch_texts).tolist()
+                all_embeddings.extend(batch_embeddings)
+                print(f"Processed batch {i//batch_size + 1}/{(len(texts)-1)//batch_size + 1}")
+            except Exception as e:
+                print(f"Error processing batch {i//batch_size + 1}: {e}")
+                st.error(f"Error processing text batch: {e}")
+                return None
 
         # Upsert vectors to Pinecone in smaller batches
         print("Upserting vectors to Pinecone in batches...")
@@ -379,8 +454,15 @@ def setup_vector_store(pdf_chunks, pinecone_api):
 
         # Verify vectors were uploaded by doing a test query
         print("Verifying vectors were uploaded...")
-        test_embedding = embedding_model.embed_query("test")
-        test_results = pinecone_api.query_vectors(test_embedding, top_k=1)
+        try:
+            if hasattr(embedding_model, 'embed_query'):
+                test_embedding = embedding_model.embed_query("test")
+            else:
+                test_embedding = embedding_model.encode(["test"])[0].tolist()
+            test_results = pinecone_api.query_vectors(test_embedding, top_k=1)
+        except Exception as e:
+            print(f"Error during verification: {e}")
+            test_results = None
         if test_results and 'matches' in test_results and test_results['matches']:
             print(f"✅ Verification successful: Found {len(test_results['matches'])} vectors in index")
             st.success(f"✅ Verification: {len(test_results['matches'])} vectors found in Pinecone")
@@ -391,7 +473,14 @@ def setup_vector_store(pdf_chunks, pinecone_api):
         # Create a custom retriever function
         def custom_retriever(query):
             # Generate embedding for the query
-            query_embedding = embedding_model.embed_query(query)
+            try:
+                if hasattr(embedding_model, 'embed_query'):
+                    query_embedding = embedding_model.embed_query(query)
+                else:
+                    query_embedding = embedding_model.encode([query])[0].tolist()
+            except Exception as e:
+                print(f"Error generating query embedding: {e}")
+                return []
 
             # Query Pinecone
             results = pinecone_api.query_vectors(query_embedding, top_k=3)
